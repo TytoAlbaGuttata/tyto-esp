@@ -1,0 +1,15 @@
+# PlatformIO
+.pio/
+.pioenvs/
+.piolibdeps/
+*.hex
+*.elf
+*.bin
+
+# JetBrains
+.idea/
+cmake-build-*/
+CMakeListsPrivate.txt
+
+# Mac OS
+.DS_Store
