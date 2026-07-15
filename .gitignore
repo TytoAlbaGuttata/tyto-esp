@@ -6,6 +6,9 @@
 *.elf
 *.bin
 
+# Secrets
+src/secrets.h
+
 # JetBrains
 .idea/
 cmake-build-*/
