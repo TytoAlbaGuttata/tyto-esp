@@ -5,6 +5,10 @@
 #include <HTTPClient.h>
 #include "secrets.h"
 
+// Sleep configuration (15 min)
+#define uS_TO_S_FACTOR 1000000ULL
+#define TIME_TO_SLEEP  900
+
 #define I2C_SDA 6
 #define I2C_SCL 4
 
@@ -13,16 +17,20 @@ Adafruit_BME280 bme;
 void setup() {
     // Initiate communication
     Serial.begin(115200);
-    delay(2000);
-
     Serial.println("\n--- TYTO System Booting ---");
 
-    // Connect to Wi-fi
+    // I2C and sensor initialization
+    Wire.begin(I2C_SDA, I2C_SCL);
+    if (!bme.begin(0x77, &Wire)) {
+        Serial.println("Error: BME280 sensor not found.");
+        esp_deep_sleep_start(); // Sleep if sensor does not respond
+    }
+    Serial.println("BME280 sensor initialized successfully.");
+    Serial.println("-------------------------");
+
+    // Wi-Fi connexion
     Serial.print("Connecting to network: ");
-    Serial.println(WIFI_SSID);
-
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
         Serial.print(".");
@@ -33,33 +41,21 @@ void setup() {
     Serial.println(WiFi.localIP());
     Serial.println("-------------------------");
 
-    // Start I2C bus on the pins
-    Wire.begin(I2C_SDA, I2C_SCL);
-
-    // Sensor initialization
-    if (!bme.begin(0x77, &Wire)) {
-        Serial.println("Error: BME280 sensor not found.");
-        while (1);
-    }
-    Serial.println("BME280 sensor initialized successfully.");
-    Serial.println("-------------------------");
-}
-
-void loop() {
-    // 1. Read sensor values
-    float temp = bme.readTemperature();
-    float hum = bme.readHumidity();
-    float pres = bme.readPressure() / 100.0F;
+    // Read sensors
+    const float temp = bme.readTemperature();
+    const float hum = bme.readHumidity();
+    const float pres = bme.readPressure() / 100.0F;
 
     Serial.printf("Temp: %.2f *C | Hum: %.2f %% | Pres: %.2f hPa\n", temp, hum, pres);
 
-    // Check Wi-Fi connection before sending
+    // Send data if Wi-Fi is connecter
     if (WiFi.status() == WL_CONNECTED) {
         HTTPClient http;
 
         // Initialize the connection to the API
         http.begin(API_URL);
         http.addHeader("Content-Type", "application/json");
+        http.addHeader("X-API-Key", API_SECRET);
 
         // Format the data as a JSON string
         String jsonPayload = "{\"temperature\":" + String(temp) +
@@ -67,9 +63,7 @@ void loop() {
                              ", \"pressure\":" + String(pres) + "}";
 
         // Send the HTTP POST request
-        int httpResponseCode = http.POST(jsonPayload);
-
-        // Display the result
+        const int httpResponseCode = http.POST(jsonPayload);
         if (httpResponseCode > 0) {
             Serial.print("API Response Code: ");
             Serial.println(httpResponseCode);
@@ -80,10 +74,15 @@ void loop() {
 
         // Free resources
         http.end();
-    } else {
-        Serial.println("Error: Wi-Fi disconnected");
     }
 
-    Serial.println("-------------------------");
-    delay(10000); // Send data every 10 seconds to avoid spamming the DB
+    // Deep sleep configuration
+    esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
+    Serial.println("Going to deep sleep for 15 minutes...");
+    Serial.flush();
+    esp_deep_sleep_start();
+}
+
+void loop() {
+    // Nothing to do here as dee sleep only executes setup.
 }
