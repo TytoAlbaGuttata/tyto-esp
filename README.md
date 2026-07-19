@@ -13,7 +13,7 @@ Connect the sensor's white connector to the ESP32 following this pinout:
 * **C (Blue):** Pin 4
 * **D (Green):** Pin 6
 
-![Wiring diagram](image/wiring.jpeg)
+<img src="image/wiring.jpeg" width="400" />
 
 ## Prerequisites
 You need an IDE compatible with PlatformIO. The recommended setup for this project is **CLion** with the PlatformIO plugin installed.
