@@ -1,31 +1,48 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <Adafruit_BME280.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include "secrets.h"
 
-// Sleep configuration (15 min)
-#define uS_TO_S_FACTOR 1000000ULL
-#define TIME_TO_SLEEP  900
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET    (-1)
+#define SCREEN_ADDRESS 0x3C
 
 #define I2C_SDA 6
 #define I2C_SCL 4
 
 Adafruit_BME280 bme;
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 void setup() {
-    // Initiate communication
     Serial.begin(115200);
     Serial.println("\n--- TYTO System Booting ---");
 
-    // I2C and sensor initialization
+    // I2C initialization
     Wire.begin(I2C_SDA, I2C_SCL);
+
+    // OLED screen initialization
+    if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+        Serial.println(F("Error: OLED screen not found."));
+        for(;;);
+    }
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(0, 0);
+    display.println("Starting...");
+    display.display();
+
+    // Sensor initialization
     if (!bme.begin(0x77, &Wire)) {
         Serial.println("Error: BME280 sensor not found.");
-        esp_deep_sleep_start(); // Sleep if sensor does not respond
     }
-    Serial.println("BME280 sensor initialized successfully.");
+
+    Serial.println("Sensor and screen initialized successfully.");
     Serial.println("-------------------------");
 
     // Wi-Fi connexion
@@ -35,20 +52,36 @@ void setup() {
         delay(500);
         Serial.print(".");
     }
+    Serial.println("\nWi-Fi connexion sucessfull.");
+}
 
-    Serial.println("\nWi-Fi connected successfully");
-    Serial.print("ESP32 Local IP: ");
-    Serial.println(WiFi.localIP());
-    Serial.println("-------------------------");
-
-    // Read sensors
-    const float temp = bme.readTemperature();
-    const float hum = bme.readHumidity();
-    const float pres = bme.readPressure() / 100.0F;
+void loop() {
+    // Reading sensor
+    float temp = bme.readTemperature();
+    float hum = bme.readHumidity();
+    float pres = bme.readPressure() / 100.0F;
 
     Serial.printf("Temp: %.2f *C | Hum: %.2f %% | Pres: %.2f hPa\n", temp, hum, pres);
 
-    // Send data if Wi-Fi is connecter
+    // Update display
+    display.clearDisplay();
+    display.setCursor(0, 0);
+    display.setTextSize(1);
+    display.println("--- Current measurements ---");
+
+    display.setCursor(0, 16);
+    display.setTextSize(2);
+    display.printf("%.1f C", temp);
+
+    display.setCursor(0, 40);
+    display.setTextSize(1);
+    display.printf("Humidity : %.0f %%", hum);
+    display.setCursor(0, 52);
+    display.printf("Pressure : %.0f hPa", pres);
+
+    display.display();
+
+    // Send data if Wi-Fi is activated
     if (WiFi.status() == WL_CONNECTED) {
         HTTPClient http;
 
@@ -74,15 +107,11 @@ void setup() {
 
         // Free resources
         http.end();
+    } else {
+        // Try reconnect if connexion is lost
+        WiFi.reconnect();
     }
 
-    // Deep sleep configuration
-    esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
-    Serial.println("Going to deep sleep for 15 minutes...");
-    Serial.flush();
-    esp_deep_sleep_start();
-}
-
-void loop() {
-    // Nothing to do here as dee sleep only executes setup.
+    // Wait for 15 min, no deep sleep as screen is lit
+    delay(900000);
 }
