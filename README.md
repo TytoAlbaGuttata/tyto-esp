@@ -1,17 +1,17 @@
 # TYTO ESP32 Sensor Node
 
-![C++](https://img.shields.io/badge/c++-%2300599C.svg?style=for-the-badge&logo=c%2B%2B&logoColor=white) ![PlatformIO](https://img.shields.io/badge/PlatformIO-F6822B?style=for-the-badge&logo=platformio&logoColor=white) ![ESP32](https://img.shields.io/badge/ESP32-000000?style=for-the-badge&logo=espressif&logoColor=red) ![BME280](https://img.shields.io/badge/BME280-808080?style=for-the-badge)
+![C++](https://img.shields.io/badge/c++-%2300599C.svg?style=for-the-badge&logo=c%2B%2B&logoColor=white) ![PlatformIO](https://img.shields.io/badge/PlatformIO-F6822B?style=for-the-badge&logo=platformio&logoColor=white) ![ESP32](https://img.shields.io/badge/ESP32-000000?style=for-the-badge&logo=espressif&logoColor=red) ![BME280](https://img.shields.io/badge/BME280-808080?style=for-the-badge) ![OLED](https://img.shields.io/badge/OLED-SSD1306-blue?style=for-the-badge)
 
 > **⚠️ IMPORTANT:** This is the second part of the TYTO project. Please ensure you have set up the [TYTO API](https://github.com/TytoAlbaGuttata/tyto-api) on your Raspberry Pi before proceeding.
 
 ## Hardware & Wiring
-This node uses an ESP32 (`esp32-c6-devkitc-1`) and a BME280 sensor to collect environmental data.
+This node uses an ESP32 (`esp32-c6-devkitc-1`), a BME280 sensor, and a 0.96" I2C OLED display (SSD1306) to collect and display environmental data locally.
 
-Connect the sensor's white connector to the ESP32 following this pinout:
-* **+ (Red):** 3v3
-* **- (Black):** GND
-* **C (Blue):** Pin 4
-* **D (Green):** Pin 6
+Using a breadboard, connect both the BME280 sensor and the OLED display in parallel to the ESP32 following this pinout:
+* **VCC / + (Red):** 3v3
+* **GND / - (Black):** GND
+* **SCL / C (Blue):** Pin 4
+* **SDA / D (Green):** Pin 6
 
 <img src="image/wiring.jpeg" width="400" />
 
@@ -27,6 +27,7 @@ Create a `src/secrets.h` file with the following content:
 const char* WIFI_SSID = "WIFI_NAME";
 const char* WIFI_PASSWORD = "WIFI_PASSWORD";
 const char* API_URL = "http://<YOUR_PI_IP>:8000/api/measurements";
+const char* API_SECRET = "YOUR_API_SECRET";
 ```
 
 ## Flashing & Usage
@@ -36,7 +37,7 @@ const char* API_URL = "http://<YOUR_PI_IP>:8000/api/measurements";
 * Click the **Hammer icon** in the toolbar to build the project.
 * Click the **Green play arrow** to flash the firmware to your connected ESP32.
 
-Once connected to the Wi-Fi, the ESP32 will read the BME280 sensor and send a POST request with the data to the API every 10 seconds.
+Once connected to the Wi-Fi, the ESP32 reads the BME280 sensor, updates the OLED screen locally, and sends a POST request with the data to the API every 15 minutes.
 
 ## Contributing
 
