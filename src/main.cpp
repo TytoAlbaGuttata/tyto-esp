@@ -28,7 +28,6 @@ void setup() {
     // OLED screen initialization
     if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
         Serial.println(F("Error: OLED screen not found."));
-        for(;;);
     }
     display.clearDisplay();
     display.setTextSize(1);
@@ -42,7 +41,7 @@ void setup() {
         Serial.println("Error: BME280 sensor not found.");
     }
 
-    Serial.println("Sensor and screen initialized successfully.");
+    Serial.println("Sensor and screen initialized.");
     Serial.println("-------------------------");
 
     // Wi-Fi connexion
@@ -67,7 +66,7 @@ void loop() {
     display.clearDisplay();
     display.setCursor(0, 0);
     display.setTextSize(1);
-    display.println("--- Current measurements ---");
+    display.println("Current temperature");
 
     display.setCursor(0, 16);
     display.setTextSize(2);
