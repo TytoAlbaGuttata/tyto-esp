@@ -29,6 +29,9 @@ void setup() {
     if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
         Serial.println(F("Error: OLED screen not found."));
     }
+
+    Wire.setClock(100000);
+
     display.clearDisplay();
     display.setTextSize(1);
     display.setTextColor(SSD1306_WHITE);
@@ -55,10 +58,18 @@ void setup() {
 }
 
 void loop() {
+    // Restart wire I2C
+    Wire.end();
+    Wire.begin(I2C_SDA, I2C_SCL);
+    Wire.setClock(100000);
+
+    // Give back parameters to sensor
+    bme.begin(0x77, &Wire);
+
     // Reading sensor
-    float temp = bme.readTemperature();
-    float hum = bme.readHumidity();
-    float pres = bme.readPressure() / 100.0F;
+    const float temp = bme.readTemperature();
+    const float hum = bme.readHumidity();
+    const float pres = bme.readPressure() / 100.0F;
 
     Serial.printf("Temp: %.2f *C | Hum: %.2f %% | Pres: %.2f hPa\n", temp, hum, pres);
 
